@@ -267,6 +267,12 @@ class Plotting:
     def __init__(self):
         pass
 
+    def plot_data(self):
+        Plot('ld')
+        Plot.iplot('ld')
+        Plot.iplot('wdata test.ps/cps')
+        Plot.iplot()
+
 
 
 class Save:
@@ -302,6 +308,7 @@ class Save:
 if __name__ == '__main__':
     obsid = str(sys.argv[1])
     D = DataTreat()
+    P = Plotting()
     D.load_xcm('test.xcm')
     D.calc_error(com='1.0 3,9,12,13,16')
     result = D.stack_all()

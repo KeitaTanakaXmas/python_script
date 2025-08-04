@@ -2043,7 +2043,7 @@ class Physics:
         prob_or_tau = compute_prob(R, E)
         
         # Interpolate the result
-        interp_function = RegularGridInterpolator((r, e), prob_or_tau, bounds_error=False, fill_value=np.inf)
+        interp_function = RegularGridInterpolator((r, e), prob_or_tau, bounds_error=False, fill_value=0)
         
         return interp_function
     
@@ -4468,7 +4468,7 @@ class Simulation:
             tau_func_dict = self.probability_function_list_rsmall
             tau_all = self.generate_sum_tau_function(tau_func_dict, self.rmin, self.rmax, self.rs_dE, r_sampling_points=100, kind='linear')
             #E_array = np.linspace(6500, 8000, 10000)
-            E_array = np.linspace(6500, 6800, 10000)
+            E_array = np.linspace(6500, 8000, 10000)
             for line_list, tau_func_r_e in tau_func_dict.items():
                 center_energy = self.line_manager.line_energies[line_list]
                 if i == 0:
@@ -4484,36 +4484,48 @@ class Simulation:
         plt.grid(linestyle='--')
         plt.show()
 
-    def tau_line_center(self, color="black"):
+    def tau_line_center(self, check=False):
         """
         Tau RS of the line center.
         """
-        turb_list = np.linspace(0, 400, 2)
+        turb_list = [0]
         tau_result = {}
         for i in range(len(turb_list)):
             self.turbulent_velocity = turb_list[i]
             self.initialize_for_tau_E()
             tau_func_dict = self.probability_function_list_rsmall
-            tau_all = self.generate_sum_tau_function(tau_func_dict, self.rmin, self.rmax, self.rs_dE, r_sampling_points=100, kind='linear')
-            #E_array = np.linspace(6500, 8000, 10000)
-            E_array = np.linspace(6500, 6800, 10000)
-            plt.plot(E_array, tau_all(E_array), label=f'turb = {self.turbulent_velocity} km/s', color=plt.cm.viridis(i/len(turb_list)))
-            plt.show()
-            for line_list, tau_func_r_e in tau_func_dict.items():
-                center_energy = self.line_manager.line_energies[line_list]
-                if i == 0:
-                    tau_result[line_list] = tau_all(center_energy)
-                else:
-                    tau_result[line_list] = np.append(tau_result[line_list],tau_all(center_energy))
-        for i, line_list in enumerate(tau_result.keys()):
-            plt.plot(turb_list, tau_result[line_list], label=f'{self.cluster_name}', color=color) 
+            if check:
+                E_array = np.linspace(6500, 8000, 10000)
+                print(tau_func_dict.items())
+                for line_list, tau_func_r_e in tau_func_dict.items():
+                    tau_f = self.generate_tau_E_function(tau_func_r_e, self.rmin, self.rmax, E_array, r_sampling_points=100, kind='linear')
+                    plt.plot(E_array, tau_f(E_array))
+                    center_energy = self.line_manager.line_energies[line_list]
+                    if i == 0:
+                        tau_result[line_list] = tau_f(center_energy)
+                    else:
+                        tau_result[line_list] = np.append(tau_result[line_list],tau_f(center_energy))
+            else:
+                tau_all = self.generate_sum_tau_function(tau_func_dict, self.rmin, self.rmax, self.rs_dE, r_sampling_points=100, kind='linear')
+                #E_array = np.linspace(6500, 8000, 10000)
+                E_array = np.linspace(6500, 8000, 10000)
+                plt.plot(E_array, tau_all(E_array), label=f'turb = {self.turbulent_velocity} km/s', color=plt.cm.viridis(i/len(turb_list)))
+                #plt.show()
+                for line_list, tau_func_r_e in tau_func_dict.items():
+                    center_energy = self.line_manager.line_energies[line_list]
+                    if i == 0:
+                        tau_result[line_list] = tau_all(center_energy)
+                    else:
+                        tau_result[line_list] = np.append(tau_result[line_list],tau_all(center_energy))
+        # for i, line_list in enumerate(tau_result.keys()):
+        #     plt.plot(turb_list, tau_result[line_list], label=f'{self.cluster_name}', color=color) 
         print(tau_result)
         plt.xlabel('Turbulent Velocity (km/s)')
         plt.ylabel('Optical Depth')
         plt.title('Optical Depth of Resonance Scattering')
         plt.legend()
         plt.grid(linestyle='--')
-    
+        plt.show()
 
     def ni_integration(self):
         r = np.linspace(0.1, 1000, 1000)
